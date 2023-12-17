@@ -1,9 +1,10 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"net/http"
-
+	"os"
 	"urlshort"
 )
 
@@ -11,32 +12,31 @@ func main() {
 
 	mux := defaultMux()
 
-	// Build the MapHandler using the mux as the fallback
-	pathsToUrls := map[string]string{
-		"/urlshort-godoc": "https://godoc.org/urlshort",
-		"/yaml-godoc":     "https://godoc.org/gopkg.in/yaml.v2",
-	}
-	mapHandler := urlshort.MapHandler(pathsToUrls, mux)
+	jsonFileName := flag.String("json", "./example.json", "json file which provides redirect routes")
+	ymlFileName := flag.String("yml", "./example.yml", "yml file which provides redirect routes")
+	flag.Parse()
 
-	// Build the YAMLHandler using the mapHandler as the
-	// fallback
-	yaml := `
-- path: /urlshort
-  url: https://github.com/gophercises/urlshort
-- path: /urlshort-final
-  url: https://github.com/gophercises/urlshort/tree/solution
-`
-
-	yamlHandler, err := urlshort.YAMLHandler([]byte(yaml), mapHandler)
+	jsonBytes, err := os.ReadFile(*jsonFileName)
 	if err != nil {
 		panic(err)
 	}
 
-	jsn := (`[{
-	"path":"/google",
-	"url":"https://www.google.com"
-}]`)
-	jsonHandler, err := urlshort.JsonHandler([]byte(jsn), yamlHandler)
+	ymlBytes, err := os.ReadFile(*ymlFileName)
+	if err != nil {
+		panic(err)
+	}
+	// Build the MapHandler using the mux as the fallback
+	pathsToUrls := map[string]string{
+		"/insta": "https://instagram.com",
+	}
+	mapHandler := urlshort.MapHandler(pathsToUrls, mux)
+
+	yamlHandler, err := urlshort.YAMLHandler(ymlBytes, mapHandler)
+	if err != nil {
+		panic(err)
+	}
+
+	jsonHandler, err := urlshort.JsonHandler([]byte(jsonBytes), yamlHandler)
 	if err != nil {
 		panic(err)
 	}
